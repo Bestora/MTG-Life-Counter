@@ -30,12 +30,19 @@ if [ -z "$APP_KEY" ] || grep -q "^APP_KEY=$" .env 2>/dev/null; then
     php artisan key:generate --force
 fi
 
+# Clear any cached config (may reference wrong paths)
+php artisan config:clear
+
 # Run migrations
-php artisan migrate --force
+echo "[entrypoint] Running migrations..."
+php artisan migrate --force --verbose
+echo "[entrypoint] Migrations complete."
 
 # Cache config, routes, views for production
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
+
+echo "[entrypoint] Boot complete, starting services..."
 
 exec "$@"
