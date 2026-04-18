@@ -37,10 +37,14 @@ php artisan config:clear
 echo "[entrypoint] Running migrations..."
 php artisan migrate --force 2>&1
 
-# Verify critical tables actually exist, otherwise force fresh migration
+# Verify critical tables actually exist, otherwise reset database
 if ! php artisan tinker --execute "try { DB::table('cache')->count(); echo 'OK'; } catch (\Throwable \$e) { echo 'MISSING'; }" 2>/dev/null | grep -q "OK"; then
-    echo "[entrypoint] Tables missing despite migrations — running migrate:fresh..."
-    php artisan migrate:fresh --force
+    echo "[entrypoint] Tables missing — resetting database..."
+    rm -f database/database.sqlite
+    touch database/database.sqlite
+    chown www-data:www-data database/database.sqlite
+    chmod 775 database/database.sqlite
+    php artisan migrate --force
 fi
 
 echo "[entrypoint] Migrations complete."
