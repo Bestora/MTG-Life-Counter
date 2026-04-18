@@ -1,0 +1,11 @@
+{
+    "mcpServers": {
+        "laravel-boost": {
+            "command": "/nix/store/8rcp3802y9g8s9a5pi2lbr5v5m6yq0gk-php-with-extensions-8.4.18/bin/php",
+            "args": [
+                "/Users/dennis.rehbehn/Projekte/mtg-live-counter-app/artisan",
+                "boost:mcp"
+            ]
+        }
+    }
+}
