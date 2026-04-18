@@ -7,10 +7,13 @@
         openCustomModal(action) {
             this.customAction = action;
             this.customAmount = '';
-            // Requesting haptic feedback for long press execution
-            if ('vibrate' in navigator) navigator.vibrate(70);
             $dispatch('modal-show', { name: 'custom-life-{{$player->id}}' });
-            setTimeout(() => document.getElementById('custom-input-{{$player->id}}')?.focus(), 150);
+            
+            // Immediate focus for robust mobile keyboard spawning
+            setTimeout(() => {
+                let input = document.getElementById('custom-input-{{$player->id}}');
+                if (input) input.focus();
+            }, 50);
         }
      }"
      @vibrate-phone.window="if ($event.detail.playerId === {{ $player->id }} && {{ $isCurrentPlayer ? 'true' : 'false' }}) { if ('vibrate' in navigator) navigator.vibrate([150, 50, 150]); }"
@@ -76,24 +79,24 @@
     <!-- Bottom Plus/Minus Controls -->
     <div class="absolute bottom-2 lg:bottom-4 flex gap-4 w-full px-4 justify-between">
         <flux:button 
-            @pointerdown="firedLong = false; timer = setTimeout(() => { firedLong = true; openCustomModal('sub'); }, 400)"
-            @pointerup="clearTimeout(timer)"
-            @pointerleave="clearTimeout(timer)"
-            @pointerout="clearTimeout(timer)"
-            @touchcancel="clearTimeout(timer)"
+            @pointerdown="firedLong = false; timer = setTimeout(() => { firedLong = true; if ('vibrate' in navigator) navigator.vibrate(70); }, 400)"
+            @pointerup="clearTimeout(timer); if(firedLong) { openCustomModal('sub'); }"
+            @pointerleave="clearTimeout(timer); if(firedLong) { openCustomModal('sub'); firedLong = false; }"
+            @pointerout="clearTimeout(timer);"
+            @touchcancel="clearTimeout(timer); if(firedLong) { openCustomModal('sub'); firedLong = false; }"
             @contextmenu.prevent
-            @click="if(!firedLong) { $wire.updateLife(-1); if ({{ $isCurrentPlayer ? 'true' : 'false' }} && 'vibrate' in navigator) navigator.vibrate(40); }" 
+            @click="if(!firedLong) { $wire.updateLife(-1); if ({{ $isCurrentPlayer ? 'true' : 'false' }} && 'vibrate' in navigator) navigator.vibrate(40); } else { firedLong = false; }" 
             icon="minus" variant="subtle" 
             class="w-16 h-16 rounded-full bg-zinc-900/10 dark:bg-white/10 hover:bg-zinc-900/20 dark:hover:bg-white/20 select-none" />
                      
         <flux:button 
-            @pointerdown="firedLong = false; timer = setTimeout(() => { firedLong = true; openCustomModal('add'); }, 400)"
-            @pointerup="clearTimeout(timer)"
-            @pointerleave="clearTimeout(timer)"
-            @pointerout="clearTimeout(timer)"
-            @touchcancel="clearTimeout(timer)"
+            @pointerdown="firedLong = false; timer = setTimeout(() => { firedLong = true; if ('vibrate' in navigator) navigator.vibrate(70); }, 400)"
+            @pointerup="clearTimeout(timer); if(firedLong) { openCustomModal('add'); }"
+            @pointerleave="clearTimeout(timer); if(firedLong) { openCustomModal('add'); firedLong = false; }"
+            @pointerout="clearTimeout(timer);"
+            @touchcancel="clearTimeout(timer); if(firedLong) { openCustomModal('add'); firedLong = false; }"
             @contextmenu.prevent
-            @click="if(!firedLong) { $wire.updateLife(1); if ({{ $isCurrentPlayer ? 'true' : 'false' }} && 'vibrate' in navigator) navigator.vibrate(40); }" 
+            @click="if(!firedLong) { $wire.updateLife(1); if ({{ $isCurrentPlayer ? 'true' : 'false' }} && 'vibrate' in navigator) navigator.vibrate(40); } else { firedLong = false; }" 
             icon="plus" variant="subtle" 
             class="w-16 h-16 rounded-full bg-zinc-900/10 dark:bg-white/10 hover:bg-zinc-900/20 dark:hover:bg-white/20 select-none" />
     </div>
