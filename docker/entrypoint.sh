@@ -20,8 +20,13 @@ touch database/database.sqlite
 chown -R www-data:www-data storage bootstrap/cache database
 chmod -R 775 storage bootstrap/cache database
 
+# Create .env if it doesn't exist (dockerignored, not in image)
+if [ ! -f .env ]; then
+    cp .env.example .env
+fi
+
 # Generate app key if not set
-if [ -z "$APP_KEY" ]; then
+if [ -z "$APP_KEY" ] || grep -q "^APP_KEY=$" .env 2>/dev/null; then
     php artisan key:generate --force
 fi
 
