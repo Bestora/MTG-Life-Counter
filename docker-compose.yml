@@ -18,6 +18,7 @@ services:
       APP_ENV: production
       APP_DEBUG: "false"
       APP_URL: "http://localhost"
+      TRUSTED_PROXIES: "*"
 
       DB_CONNECTION: sqlite
 
