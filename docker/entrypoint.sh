@@ -12,13 +12,18 @@ mkdir -p storage/app/public \
          storage/logs \
          bootstrap/cache
 
-# Ensure SQLite database exists
-mkdir -p database
-touch database/database.sqlite
+# Persistent data directory (Docker volume mounted at /data)
+mkdir -p /data
+touch /data/database.sqlite
+chown -R www-data:www-data /data
+chmod -R 775 /data
+
+# Symlink so Laravel finds the database at the expected path
+ln -sf /data/database.sqlite database/database.sqlite
 
 # Fix permissions
-chown -R www-data:www-data storage bootstrap/cache database
-chmod -R 775 storage bootstrap/cache database
+chown -R www-data:www-data storage bootstrap/cache
+chmod -R 775 storage bootstrap/cache
 
 # Create .env if it doesn't exist (dockerignored, not in image)
 if [ ! -f .env ]; then
@@ -33,20 +38,9 @@ fi
 # Clear any cached config (may reference wrong paths)
 php artisan config:clear
 
-# Run migrations — detect corrupted state where migrations table exists but actual tables don't
+# Run migrations
 echo "[entrypoint] Running migrations..."
-php artisan migrate --force 2>&1
-
-# Verify critical tables actually exist, otherwise reset database
-if ! php artisan tinker --execute "try { DB::table('cache')->count(); echo 'OK'; } catch (\Throwable \$e) { echo 'MISSING'; }" 2>/dev/null | grep -q "OK"; then
-    echo "[entrypoint] Tables missing — resetting database..."
-    rm -f database/database.sqlite
-    touch database/database.sqlite
-    chown www-data:www-data database/database.sqlite
-    chmod 775 database/database.sqlite
-    php artisan migrate --force
-fi
-
+php artisan migrate --force
 echo "[entrypoint] Migrations complete."
 
 # Cache config, routes, views for production
