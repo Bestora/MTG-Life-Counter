@@ -1,5 +1,17 @@
 <div x-data="{ 
-        localLife: $wire.entangle('life')
+        localLife: $wire.entangle('life'),
+        timer: null,
+        firedLong: false,
+        customAction: 'set',
+        customAmount: '',
+        openCustomModal(action) {
+            this.customAction = action;
+            this.customAmount = '';
+            // Requesting haptic feedback for long press execution
+            if ('vibrate' in navigator) navigator.vibrate(70);
+            $dispatch('modal-show', { name: 'custom-life-{{$player->id}}' });
+            setTimeout(() => document.getElementById('custom-input-{{$player->id}}')?.focus(), 150);
+        }
      }"
      @vibrate-phone.window="if ($event.detail.playerId === {{ $player->id }} && {{ $isCurrentPlayer ? 'true' : 'false' }}) { if ('vibrate' in navigator) navigator.vibrate([150, 50, 150]); }"
      class="rounded-2xl p-4 flex flex-col items-center justify-center shadow-md relative overflow-hidden h-full transition-opacity duration-500" 
@@ -23,6 +35,13 @@
                         </flux:menu.item>
                     @endforeach
                 </flux:menu.submenu>
+                
+                <flux:menu.separator />
+
+                <flux:menu.item @click="openCustomModal('set')" icon="pencil">
+                    Leben setzen (HP)
+                </flux:menu.item>
+                
                 <flux:menu.item wire:click="" icon="paint-brush" class="opacity-50">
                     Change Color (Coming soon)
                 </flux:menu.item>
@@ -56,12 +75,44 @@
     
     <!-- Bottom Plus/Minus Controls -->
     <div class="absolute bottom-2 lg:bottom-4 flex gap-4 w-full px-4 justify-between">
-        <flux:button wire:click="updateLife(-1)" x-on:click="if ({{ $isCurrentPlayer ? 'true' : 'false' }} && 'vibrate' in navigator) navigator.vibrate(40);" icon="minus" variant="subtle" 
-                     class="w-16 h-16 rounded-full bg-zinc-900/10 dark:bg-white/10 hover:bg-zinc-900/20 dark:hover:bg-white/20" />
+        <flux:button 
+            @pointerdown="firedLong = false; timer = setTimeout(() => { firedLong = true; openCustomModal('sub'); }, 400)"
+            @pointerup="clearTimeout(timer)"
+            @pointerleave="clearTimeout(timer)"
+            @pointerout="clearTimeout(timer)"
+            @touchcancel="clearTimeout(timer)"
+            @contextmenu.prevent
+            @click="if(!firedLong) { $wire.updateLife(-1); if ({{ $isCurrentPlayer ? 'true' : 'false' }} && 'vibrate' in navigator) navigator.vibrate(40); }" 
+            icon="minus" variant="subtle" 
+            class="w-16 h-16 rounded-full bg-zinc-900/10 dark:bg-white/10 hover:bg-zinc-900/20 dark:hover:bg-white/20 select-none" />
                      
-        <flux:button wire:click="updateLife(1)" x-on:click="if ({{ $isCurrentPlayer ? 'true' : 'false' }} && 'vibrate' in navigator) navigator.vibrate(40);" icon="plus" variant="subtle" 
-                     class="w-16 h-16 rounded-full bg-zinc-900/10 dark:bg-white/10 hover:bg-zinc-900/20 dark:hover:bg-white/20" />
+        <flux:button 
+            @pointerdown="firedLong = false; timer = setTimeout(() => { firedLong = true; openCustomModal('add'); }, 400)"
+            @pointerup="clearTimeout(timer)"
+            @pointerleave="clearTimeout(timer)"
+            @pointerout="clearTimeout(timer)"
+            @touchcancel="clearTimeout(timer)"
+            @contextmenu.prevent
+            @click="if(!firedLong) { $wire.updateLife(1); if ({{ $isCurrentPlayer ? 'true' : 'false' }} && 'vibrate' in navigator) navigator.vibrate(40); }" 
+            icon="plus" variant="subtle" 
+            class="w-16 h-16 rounded-full bg-zinc-900/10 dark:bg-white/10 hover:bg-zinc-900/20 dark:hover:bg-white/20 select-none" />
     </div>
+    
+    <!-- Custom HP Adjustment Modal -->
+    <flux:modal name="custom-life-{{ $player->id }}" class="md:w-96">
+        <div class="space-y-4">
+            <h2 class="text-lg font-bold" x-text="customAction === 'add' ? 'Leben hinzufügen' : (customAction === 'sub' ? 'Leben abziehen' : 'Leben setzen (auf exakten Wert)')">Leben anpassen</h2>
+            
+            <flux:input id="custom-input-{{$player->id}}" type="number" x-model="customAmount" inputmode="numeric" pattern="[0-9]*" placeholder="0" @keydown.enter="$wire.applyCustomAmount(customAction, customAmount); customAmount = ''; $dispatch('modal-close', { name: 'custom-life-{{$player->id}}' });" />
+            
+            <div class="flex gap-2">
+                <flux:modal.close class="flex-1">
+                    <flux:button variant="ghost" class="w-full">Abbrechen</flux:button>
+                </flux:modal.close>
+                <flux:button variant="primary" class="flex-1" @click="$wire.applyCustomAmount(customAction, customAmount); customAmount = ''; $dispatch('modal-close', { name: 'custom-life-{{$player->id}}' });" x-bind:disabled="!customAmount">Bestätigen</flux:button>
+            </div>
+        </div>
+    </flux:modal>
     
     <!-- If Eliminated Message -->
     @if($player->is_eliminated)

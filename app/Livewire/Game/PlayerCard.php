@@ -16,6 +16,21 @@ class PlayerCard extends Component
     public int $life;
     public array $cmdDamage = [];
     public array $counters = [];
+    
+    public function applyCustomAmount($action, $amount)
+    {
+        if (!is_numeric($amount)) return;
+        $val = (int) $amount;
+        
+        if ($action === 'set') {
+            $diff = $val - $this->life;
+            $this->updateLife($diff);
+        } elseif ($action === 'add') {
+            $this->updateLife($val);
+        } elseif ($action === 'sub') {
+            $this->updateLife(-$val);
+        }
+    }
 
     public function mount(Player $player, bool $isCurrentPlayer)
     {
