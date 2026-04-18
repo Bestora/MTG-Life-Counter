@@ -1,5 +1,22 @@
 # ============================================
-# Stage 1: Build frontend assets
+# Stage 1: Install PHP dependencies
+# ============================================
+FROM composer:2 AS vendor
+
+WORKDIR /app
+
+COPY composer.json composer.lock ./
+RUN composer install \
+    --no-dev \
+    --no-interaction \
+    --no-scripts \
+    --prefer-dist \
+    --optimize-autoloader \
+    --ignore-platform-reqs
+
+
+# ============================================
+# Stage 2: Build frontend assets
 # ============================================
 FROM node:22-alpine AS assets
 
@@ -21,27 +38,12 @@ RUN npm ci --include=optional
 
 COPY vite.config.js ./
 COPY resources/ ./resources/
-# Tailwind needs to scan blade files for classes
+# Tailwind scans blade files for classes
 COPY app/ ./app/
+# Flux UI CSS lives in vendor — needed for the @import in app.css
+COPY --from=vendor /app/vendor ./vendor
 
 RUN npm run build
-
-
-# ============================================
-# Stage 2: Install PHP dependencies
-# ============================================
-FROM composer:2 AS vendor
-
-WORKDIR /app
-
-COPY composer.json composer.lock ./
-RUN composer install \
-    --no-dev \
-    --no-interaction \
-    --no-scripts \
-    --prefer-dist \
-    --optimize-autoloader \
-    --ignore-platform-reqs
 
 
 # ============================================
