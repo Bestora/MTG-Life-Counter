@@ -33,9 +33,16 @@ fi
 # Clear any cached config (may reference wrong paths)
 php artisan config:clear
 
-# Run migrations
+# Run migrations — detect corrupted state where migrations table exists but actual tables don't
 echo "[entrypoint] Running migrations..."
-php artisan migrate --force --verbose
+php artisan migrate --force 2>&1
+
+# Verify critical tables actually exist, otherwise force fresh migration
+if ! php artisan tinker --execute "try { DB::table('cache')->count(); echo 'OK'; } catch (\Throwable \$e) { echo 'MISSING'; }" 2>/dev/null | grep -q "OK"; then
+    echo "[entrypoint] Tables missing despite migrations — running migrate:fresh..."
+    php artisan migrate:fresh --force
+fi
+
 echo "[entrypoint] Migrations complete."
 
 # Cache config, routes, views for production
