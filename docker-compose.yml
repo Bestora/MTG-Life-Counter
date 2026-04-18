@@ -12,12 +12,12 @@ services:
       - "8080:8080"
     volumes:
       - app-data:/data
-      - app-storage:/app/storage
     environment:
       APP_NAME: "MTG Life Counter"
       APP_ENV: production
       APP_DEBUG: "false"
       APP_URL: "http://localhost"
+      ASSET_URL: "http://localhost"
       TRUSTED_PROXIES: "*"
 
       DB_CONNECTION: sqlite
